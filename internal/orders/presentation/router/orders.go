@@ -7,12 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(api *gin.RouterGroup, h *handler.OrdersHandler) {
+func RegisterRoutes(api *gin.RouterGroup, hOrders *handler.OrdersHandler, hPayments *handler.PaymentsHandler, hProducts *handler.ProductsHandler) {
 	orders := api.Group("/orders")
 	{
 		orders.POST("/:rut", func(c *gin.Context) {
 			rut := c.Param("rut")
-			h.CreateOrder(c, rut)
+			hOrders.CreateOrder(c, rut)
 		})
 
 		orders.PUT("", func(c *gin.Context) {
@@ -21,17 +21,42 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.OrdersHandler) {
 				c.JSON(400, gin.H{"error": "Invalid request body"})
 				return
 			}
-			h.UpdateOrder(c, &orderUpdateRequest)
+			hOrders.UpdateOrder(c, &orderUpdateRequest)
 		})
 
 		orders.GET("/:id", func(c *gin.Context) {
 			id := c.Param("id")
-			h.GetOrderById(c, id)
+			hOrders.GetOrderById(c, id)
 		})
 
 		orders.GET("/rut/:rut", func(c *gin.Context) {
 			rut := c.Param("rut")
-			h.GetOrdersByRut(c, rut)
+			hOrders.GetOrdersByRut(c, rut)
+		})
+	}
+
+	payments := api.Group("/payments")
+	{
+		payments.POST("/:orderID", func(c *gin.Context) {
+			orderID := c.Param("orderID")
+			hPayments.CreatePayment(c, orderID)
+		})
+
+		payments.GET("/order/:orderID", func(c *gin.Context) {
+			orderID := c.Param("orderID")
+			hPayments.GetPaymentsByOrderID(c, orderID)
+		})
+	}
+
+	products := api.Group("/products")
+	{
+		products.GET("", func(c *gin.Context) {
+			hProducts.GetAllProducts(c)
+		})
+
+		products.GET("/:sku", func(c *gin.Context) {
+			sku := c.Param("sku")
+			hProducts.GetProductBySku(c, sku)
 		})
 	}
 }

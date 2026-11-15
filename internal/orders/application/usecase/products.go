@@ -21,6 +21,10 @@ func (uc *ProductsUseCase) FindAll(ctx context.Context) ([]*dto.ProductsResponse
 		return nil, err
 	}
 
+	if len(products) == 0 {
+		return nil, nil
+	}
+
 	responses := make([]*dto.ProductsResponse, 0, len(products))
 	for i := range products {
 		product := products[i]
@@ -33,6 +37,10 @@ func (uc *ProductsUseCase) FindBySku(ctx context.Context, sku string) (*dto.Prod
 	product, err := uc.productsRepo.FindBySku(ctx, sku)
 	if err != nil {
 		return nil, err
+	}
+
+	if product == nil {
+		return nil, nil
 	}
 
 	return dto.ProductsResponseFromEntity(product), nil
