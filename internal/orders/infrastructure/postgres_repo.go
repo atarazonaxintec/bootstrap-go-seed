@@ -14,13 +14,32 @@ import (
 )
 
 var _ domain.OrdersRepository = (*PostgresOrdersRepository)(nil)
+var _ domain.OrderProductsRepository = (*PostgresProductsRepository)(nil)
+var _ domain.OrderPaymentRepository = (*PostgresPaymentsRepository)(nil)
 
 type PostgresOrdersRepository struct {
 	db database.Database
 }
 
+type PostgresProductsRepository struct {
+	db database.Database
+}
+
+type PostgresPaymentsRepository struct {
+	db database.Database
+}
+
+// Constructor functions for the repositories
 func NewPostgresOrdersRepository(db database.Database) *PostgresOrdersRepository {
 	return &PostgresOrdersRepository{db: db}
+}
+
+func NewPostgresProductsRepository(db database.Database) *PostgresProductsRepository {
+	return &PostgresProductsRepository{db: db}
+}
+
+func NewPostgresPaymentsRepository(db database.Database) *PostgresPaymentsRepository {
+	return &PostgresPaymentsRepository{db: db}
 }
 
 // Implementamos la interfaz del repository
@@ -258,6 +277,182 @@ func loadOrderDetails(ctx context.Context, querier orderDetailQuerier, order *en
 	}
 	if err := paymentRows.Err(); err != nil {
 		return fmt.Errorf("iterate payments for order %q: %w", order.Id, err)
+	}
+	return nil
+}
+
+func (r *PostgresOrdersRepository) GetOrderAndReserveForUpdate(ctx context.Context, id string) (*entity.OrderEntity, error) {
+	pool := r.db.Native().(*pgxpool.Pool)
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin transaction to get order for update: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	order, err := scanOrder(tx.QueryRow(ctx, `
+		SELECT id::text, rut, sub_total, status, created_at::text, updated_at::text
+		FROM go_seed.orders
+		WHERE id = $1
+		FOR UPDATE
+	`, id))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("order %q not found: %w", id, err)
+		}
+		return nil, fmt.Errorf("get order %q for update: %w", id, err)
+	}
+
+	if err := loadOrderDetails(ctx, tx, order); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit transaction to get order for update: %w", err)
+	}
+	return order, nil
+}
+
+// ProductsRepository interface implementation
+func (r *PostgresProductsRepository) FindBySku(ctx context.Context, sku string) (*entity.ProductEntity, error) {
+	pool := r.db.Native().(*pgxpool.Pool)
+	product := &entity.ProductEntity{}
+	if err := pool.QueryRow(ctx, `
+		SELECT sku, name, price, created_at::text, updated_at::text, description, stock_quantity
+		FROM go_seed.products
+		WHERE sku = $1
+	`, sku).Scan(&product.Sku, &product.Name, &product.Price, &product.CreatedAt, &product.UpdatedAt, &product.Description, &product.StockQuantity); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("product %q not found: %w", sku, err)
+		}
+		return nil, fmt.Errorf("get product %q: %w", sku, err)
+	}
+	return product, nil
+}
+
+func (r *PostgresProductsRepository) FindAll(ctx context.Context) ([]*entity.ProductEntity, error) {
+	pool := r.db.Native().(*pgxpool.Pool)
+
+	rows, err := pool.Query(ctx, `
+		SELECT sku, name, price, created_at::text, updated_at::text, description, stock_quantity
+		FROM go_seed.products
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("find all products: %w", err)
+	}
+	defer rows.Close()
+
+	products := make([]*entity.ProductEntity, 0)
+	for rows.Next() {
+		product := &entity.ProductEntity{}
+		if err := rows.Scan(&product.Sku, &product.Name, &product.Price, &product.CreatedAt, &product.UpdatedAt, &product.Description, &product.StockQuantity); err != nil {
+			return nil, fmt.Errorf("scan product: %w", err)
+		}
+		products = append(products, product)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate products: %w", err)
+	}
+	return products, nil
+}
+
+// PaymentRepository interface implementation
+func (r *PostgresPaymentsRepository) CreateEmpty(ctx context.Context, orderID string) (*entity.OrderPaymentEntity, error) {
+	sql := `
+		INSERT INTO go_seed.order_payments (order_id, status)
+		VALUES ($1, $2)
+		RETURNING id::text, order_id::text, payment_method, amount, paid_at::text, status
+	`
+
+	pool := r.db.Native().(*pgxpool.Pool)
+	payment := &entity.OrderPaymentEntity{}
+	var status string
+	if err := pool.QueryRow(ctx, sql, orderID, entity.Empty).Scan(
+		&payment.Id,
+		&payment.OrderId,
+		&payment.PaymentMethod,
+		&payment.Amount,
+		&payment.PaidAt,
+		&status,
+	); err != nil {
+		return nil, fmt.Errorf("create empty payment for order %q: %w", orderID, err)
+	}
+	return payment, nil
+}
+
+func (r *PostgresPaymentsRepository) FindByOrderID(ctx context.Context, id string) ([]*entity.OrderPaymentEntity, error) {
+	pool := r.db.Native().(*pgxpool.Pool)
+	payment := []*entity.OrderPaymentEntity{}
+	var status string
+	sql := `
+		SELECT id::text, order_id::text, payment_method, amount, paid_at::text, status
+		FROM go_seed.order_payments
+		WHERE order_id = $1
+	`
+	rows, err := pool.Query(ctx, sql, id)
+	if err != nil {
+		return nil, fmt.Errorf("find payments for order %q: %w", id, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		p := &entity.OrderPaymentEntity{}
+		if err := rows.Scan(
+			&p.Id,
+			&p.OrderId,
+			&p.PaymentMethod,
+			&p.Amount,
+			&p.PaidAt,
+			&status,
+		); err != nil {
+			return nil, fmt.Errorf("scan payment for order %q: %w", id, err)
+		}
+		p.Status = entity.OrderPaymentStatus(status)
+		payment = append(payment, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate payments for order %q: %w", id, err)
+	}
+	return payment, nil
+}
+
+func (r *PostgresPaymentsRepository) Pay(ctx context.Context, id string, paymentMethod string, amount float64) (*entity.OrderPaymentEntity, error) {
+
+	sql := `
+		UPDATE go_seed.order_payments
+		SET payment_method = $2, amount = $3, paid_at = CURRENT_TIMESTAMP, status = $4
+		WHERE order_id = $1
+		RETURNING id::text, order_id::text, payment_method, amount, paid_at::text, status
+	`
+
+	pool := r.db.Native().(*pgxpool.Pool)
+	payment := &entity.OrderPaymentEntity{}
+	var status string
+	if err := pool.QueryRow(ctx, sql, id, paymentMethod, amount, entity.Approved).Scan(
+		&payment.Id,
+		&payment.OrderId,
+		&payment.PaymentMethod,
+		&payment.Amount,
+		&payment.PaidAt,
+		&status,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("payment for order %q not found: %w", id, err)
+		}
+		return nil, fmt.Errorf("pay for order %q: %w", id, err)
+	}
+	payment.Status = entity.OrderPaymentStatus(status)
+
+	return payment, nil
+}
+
+func (r *PostgresPaymentsRepository) UpdateStatus(ctx context.Context, id string, status entity.OrderPaymentStatus) error {
+	pool := r.db.Native().(*pgxpool.Pool)
+	if _, err := pool.Exec(ctx, `
+		UPDATE go_seed.order_payments
+		SET status = $2
+		WHERE order_id = $1
+	`, id, status); err != nil {
+		return fmt.Errorf("update payment status for order %q: %w", id, err)
 	}
 	return nil
 }

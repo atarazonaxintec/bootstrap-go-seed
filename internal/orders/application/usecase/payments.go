@@ -34,7 +34,7 @@ func (uc *PaymentsUseCase) FindPaymentsByOrderID(ctx context.Context, orderID st
 
 	var responses []*dto.OrderPaymentResponse
 	for _, payment := range payments {
-		responses = append(responses, dto.OrderPaymentToOrderPaymentResponse(&payment))
+		responses = append(responses, dto.OrderPaymentToOrderPaymentResponse(payment))
 	}
 
 	return responses, nil

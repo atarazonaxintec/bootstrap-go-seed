@@ -12,7 +12,7 @@ type mockPaymentRepository struct {
 	emptyPayment        *entity.OrderPaymentEntity
 	createEmptyErr      error
 	createdOrderID      string
-	payments            []entity.OrderPaymentEntity
+	payments            []*entity.OrderPaymentEntity
 	findPaymentsErr     error
 	foundOrderID        string
 	paidPayment         *entity.OrderPaymentEntity
@@ -30,7 +30,7 @@ func (m *mockPaymentRepository) CreateEmpty(_ context.Context, orderID string) (
 	return m.emptyPayment, m.createEmptyErr
 }
 
-func (m *mockPaymentRepository) FindByOrderID(_ context.Context, orderID string) ([]entity.OrderPaymentEntity, error) {
+func (m *mockPaymentRepository) FindByOrderID(_ context.Context, orderID string) ([]*entity.OrderPaymentEntity, error) {
 	m.foundOrderID = orderID
 	return m.payments, m.findPaymentsErr
 }
@@ -80,7 +80,7 @@ func TestPaymentsUseCase_CreateEmptyPayment_ReturnsRepositoryError(t *testing.T)
 
 func TestPaymentsUseCase_FindPaymentsByOrderID(t *testing.T) {
 	repo := &mockPaymentRepository{
-		payments: []entity.OrderPaymentEntity{
+		payments: []*entity.OrderPaymentEntity{
 			{
 				Id:            "payment-1",
 				PaymentMethod: "card",

@@ -1,6 +1,6 @@
 package entity
 
-type Product struct {
+type ProductEntity struct {
 	Sku           string  `json:"sku" database:"sku"`
 	Name          string  `json:"name" database:"name"`
 	Description   string  `json:"description" database:"description"`

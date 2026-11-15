@@ -47,6 +47,10 @@ func (m *mockOrdersRepository) GetOrdersByRut(_ context.Context, rut string) ([]
 	return m.ordersByRut, m.getOrdersByRutErr
 }
 
+func (m *mockOrdersRepository) GetOrderAndReserveForUpdate(context.Context, string) (*entity.OrderEntity, error) {
+	return nil, nil
+}
+
 func TestOrdersUseCase_NewOrders(t *testing.T) {
 	createdOrder := &entity.OrderEntity{
 		Id:       "order-123",

@@ -8,10 +8,10 @@ import (
 )
 
 type ProductsUseCase struct {
-	productsRepo domain.ProductsRepository
+	productsRepo domain.OrderProductsRepository
 }
 
-func NewProductsUseCase(productsRepo domain.ProductsRepository) *ProductsUseCase {
+func NewProductsUseCase(productsRepo domain.OrderProductsRepository) *ProductsUseCase {
 	return &ProductsUseCase{productsRepo: productsRepo}
 }
 
@@ -26,9 +26,8 @@ func (uc *ProductsUseCase) FindAll(ctx context.Context) ([]*dto.ProductsResponse
 	}
 
 	responses := make([]*dto.ProductsResponse, 0, len(products))
-	for i := range products {
-		product := products[i]
-		responses = append(responses, dto.ProductsResponseFromEntity(&product))
+	for _, product := range products {
+		responses = append(responses, dto.ProductsResponseFromEntity(product))
 	}
 	return responses, nil
 }

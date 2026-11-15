@@ -12,7 +12,7 @@ type ProductsResponse struct {
 	UpdatedAt     string  `json:"updatedAt"`
 }
 
-func ProductsResponseFromEntity(product *entity.Product) *ProductsResponse {
+func ProductsResponseFromEntity(product *entity.ProductEntity) *ProductsResponse {
 	return &ProductsResponse{
 		Sku:           product.Sku,
 		Name:          product.Name,

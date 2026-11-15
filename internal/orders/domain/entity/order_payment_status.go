@@ -3,7 +3,8 @@ package entity
 type OrderPaymentStatus string
 
 const (
-	approved OrderPaymentStatus = "approved"
-	rejected OrderPaymentStatus = "rejected"
-	pending  OrderPaymentStatus = "pending"
+	Approved OrderPaymentStatus = "approved"
+	Rejected OrderPaymentStatus = "rejected"
+	Pending  OrderPaymentStatus = "pending"
+	Empty    OrderPaymentStatus = "empty"
 )

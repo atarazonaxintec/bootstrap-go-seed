@@ -9,25 +9,25 @@ import (
 )
 
 type mockProductsRepository struct {
-	products     []entity.Product
+	products     []*entity.ProductEntity
 	findAllErr   error
-	product      *entity.Product
+	product      *entity.ProductEntity
 	findBySkuErr error
 	receivedSku  string
 }
 
-func (m *mockProductsRepository) FindAll(context.Context) ([]entity.Product, error) {
+func (m *mockProductsRepository) FindAll(context.Context) ([]*entity.ProductEntity, error) {
 	return m.products, m.findAllErr
 }
 
-func (m *mockProductsRepository) FindBySku(_ context.Context, sku string) (*entity.Product, error) {
+func (m *mockProductsRepository) FindBySku(_ context.Context, sku string) (*entity.ProductEntity, error) {
 	m.receivedSku = sku
 	return m.product, m.findBySkuErr
 }
 
 func TestProductsUseCase_FindAll(t *testing.T) {
 	repo := &mockProductsRepository{
-		products: []entity.Product{
+		products: []*entity.ProductEntity{
 			{Sku: "SKU-1", Name: "Product 1", Description: "First", Price: 1250, StockQuantity: 3, CreatedAt: "created-1", UpdatedAt: "updated-1"},
 			{Sku: "SKU-2", Name: "Product 2", Description: "Second", Price: 2500, StockQuantity: 5, CreatedAt: "created-2", UpdatedAt: "updated-2"},
 		},
@@ -69,7 +69,7 @@ func TestProductsUseCase_FindAll_ReturnsRepositoryError(t *testing.T) {
 }
 
 func TestProductsUseCase_FindBySku(t *testing.T) {
-	product := &entity.Product{
+	product := &entity.ProductEntity{
 		Sku:           "SKU-1",
 		Name:          "Product 1",
 		Description:   "First",

@@ -5,7 +5,7 @@ import (
 	productsEntity "microservice/internal/orders/domain/entity"
 )
 
-type ProductsRepository interface {
-	FindAll(ctx context.Context) ([]productsEntity.Product, error)
-	FindBySku(ctx context.Context, sku string) (*productsEntity.Product, error)
+type OrderProductsRepository interface {
+	FindAll(ctx context.Context) ([]*productsEntity.ProductEntity, error)
+	FindBySku(ctx context.Context, sku string) (*productsEntity.ProductEntity, error)
 }
