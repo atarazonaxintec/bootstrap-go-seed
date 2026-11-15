@@ -3,6 +3,8 @@
 Seed base para microservicios en Go con **Clean Architecture**.  
 Diseñada para que te preocupes solo de los módulos de negocio en `internal/`.
 
+Notas de implementación y consideraciones: [README-AT.md](./README-AT.md).
+
 ## Requisitos
 
 - Go 1.25+

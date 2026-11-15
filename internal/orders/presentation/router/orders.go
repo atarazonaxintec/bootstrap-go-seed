@@ -10,7 +10,7 @@ import (
 func RegisterRoutes(api *gin.RouterGroup, hOrders *handler.OrdersHandler, hPayments *handler.PaymentsHandler, hProducts *handler.ProductsHandler) {
 	orders := api.Group("/orders")
 	{
-		orders.POST("/:rut", func(c *gin.Context) {
+		orders.POST("/rut/:rut", func(c *gin.Context) {
 			rut := c.Param("rut")
 			hOrders.CreateOrder(c, rut)
 		})
@@ -24,7 +24,7 @@ func RegisterRoutes(api *gin.RouterGroup, hOrders *handler.OrdersHandler, hPayme
 			hOrders.UpdateOrder(c, &orderUpdateRequest)
 		})
 
-		orders.GET("/:id", func(c *gin.Context) {
+		orders.GET("/id/:id", func(c *gin.Context) {
 			id := c.Param("id")
 			hOrders.GetOrderById(c, id)
 		})

@@ -3,9 +3,10 @@ package usecase
 import (
 	"context"
 	"errors"
-	"testing"
-
 	"microservice/internal/orders/domain/entity"
+	"microservice/pkg/logger"
+	"os"
+	"testing"
 )
 
 type mockProductsRepository struct {
@@ -14,6 +15,11 @@ type mockProductsRepository struct {
 	product      *entity.ProductEntity
 	findBySkuErr error
 	receivedSku  string
+}
+
+func TestMain(m *testing.M) {
+	logger.Init("dev")
+	os.Exit(m.Run())
 }
 
 func (m *mockProductsRepository) FindAll(context.Context) ([]*entity.ProductEntity, error) {

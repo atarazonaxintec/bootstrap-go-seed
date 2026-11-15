@@ -13,10 +13,20 @@ En este segmento se enumeraran los cambios, consideraciones, límites conocidos 
 - Products:
     - **Obtener todos los productos**: lista la información de los productos guardados.
     - **Obtener un producto por SKU**: muestra la informacón guardada de un solo producto.
+- Pub/Subs:
+    - Usé un emulador para simular la conexión a gcloud:
+    ```shell
+        brew install --cask google-cloud-sdk
+        gcloud components install pubsub-emulator
+        gcloud beta emulators pubsub start --project=demo-project --host-port=localhost:8085
+    ```
+- Ejecución
+    La ejecución deberia hacerse usando el Makefile provisto y configurando el .env correspondiente según el **example.env**
 ## Consideraciones
 1. Por parte de los productos, se hicieron los endpoints de recuperación para facilitar las pruebas.
 2. Implementé una política de "creación vacía" + "edición/sobrrescritura" para manejar así la idempotencia y tolerar la concurrencia. Esto es: si un usuario reintenta la creación, se le asigna un nuevo UUID y si reintenta la edición queda con la última edición realizada.
 ## Límites conocidos
 1. No supe dónde dejar los 'enums' que se usarían en las entidades y los reusé para los dto, lo cual no es elegante.
 2. Está incompleto por muchas partes, falta integración con GCP y con algún portal de pagos.
+3. No hice la integración con Pub/Subs, sólo emular la conexión para poder desplegar y hacer pruebas
 ## Siguientes pasos
