@@ -18,5 +18,5 @@ En este segmento se enumeraran los cambios, consideraciones, límites conocidos 
 2. Implementé una política de "creación vacía" + "edición/sobrrescritura" para manejar así la idempotencia y tolerar la concurrencia. Esto es: si un usuario reintenta la creación, se le asigna un nuevo UUID y si reintenta la edición queda con la última edición realizada.
 ## Límites conocidos
 1. No supe dónde dejar los 'enums' que se usarían en las entidades y los reusé para los dto, lo cual no es elegante.
-2. Está incompleto por muchas partes, falta integración con GCP y con agún portal de pagos
+2. Está incompleto por muchas partes, falta integración con GCP y con algún portal de pagos.
 ## Siguientes pasos

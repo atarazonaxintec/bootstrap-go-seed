@@ -3,6 +3,7 @@ package entity
 type OrderStatus string
 
 const (
+	inicializado        OrderStatus = "inicializado"
 	en_preparacion      OrderStatus = "en_preparacion"
 	listo_para_despacho OrderStatus = "listo_para_despacho"
 	en_transito         OrderStatus = "en_transito"

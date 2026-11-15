@@ -48,6 +48,10 @@ func (uc *OrdersUseCase) GetOrderById(ctx context.Context, id string) (*dto.Orde
 		return nil, err
 	}
 
+	if order == nil || order.Id == "" {
+		return nil, nil
+	}
+
 	return dto.EditOrderResponse(order), nil
 }
 
@@ -60,6 +64,10 @@ func (uc *OrdersUseCase) GetOrdersByRut(ctx context.Context, rut string) ([]*dto
 	var responses []*dto.OrdersResponse
 	for _, order := range orders {
 		responses = append(responses, dto.EditOrderResponse(order))
+	}
+
+	if len(responses) == 0 {
+		return nil, nil
 	}
 
 	return responses, nil

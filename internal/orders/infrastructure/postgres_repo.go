@@ -39,7 +39,7 @@ func (r *PostgresOrdersRepository) CreateOrder(ctx context.Context, rut string) 
 
 	order, err := scanOrder(tx.QueryRow(ctx, `
 		INSERT INTO go_seed.orders (rut, sub_total, status)
-		VALUES ($1, 0, 'en_preparacion')
+		VALUES ($1, 0, 'inicializado')
 		RETURNING id::text, rut, sub_total, status, created_at::text, updated_at::text
 	`, rut))
 	if err != nil {
