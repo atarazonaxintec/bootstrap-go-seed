@@ -22,6 +22,8 @@ En este segmento se enumeraran los cambios, consideraciones, límites conocidos 
     ```
 - Ejecución
     La ejecución deberia hacerse usando el Makefile provisto y configurando el .env correspondiente según el **example.env**
+- Tests
+    Se deja una [Collection.json](./migrations/go-seed-orders.postman_collection.json) lista para hacer pruebas
 ## Consideraciones
 1. Por parte de los productos, se hicieron los endpoints de recuperación para facilitar las pruebas.
 2. Implementé una política de "creación vacía" + "edición/sobrrescritura" para manejar así la idempotencia y tolerar la concurrencia. Esto es: si un usuario reintenta la creación, se le asigna un nuevo UUID y si reintenta la edición queda con la última edición realizada.
@@ -30,3 +32,7 @@ En este segmento se enumeraran los cambios, consideraciones, límites conocidos 
 2. Está incompleto por muchas partes, falta integración con GCP y con algún portal de pagos.
 3. No hice la integración con Pub/Subs, sólo emular la conexión para poder desplegar y hacer pruebas
 ## Siguientes pasos
+1. Pruebas exahustivas a los flujos
+2. Revisión de la comunicación con PubSubs
+3. Simular el pago
+4. Implementar el envío de la orden
