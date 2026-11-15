@@ -1,6 +1,6 @@
 package entity
 
-type OrderItem struct {
+type OrderItemEntity struct {
 	OrderId   string `json:"order_id" database:"order_id"`
 	Sku       string `json:"sku" database:"sku"`
 	Quantity  int    `json:"quantity" database:"quantity"`

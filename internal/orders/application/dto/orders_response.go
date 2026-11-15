@@ -36,7 +36,7 @@ func NewOrdersResponse() *OrdersResponse {
 	return response
 }
 
-func EditOrderResponse(entityOrder *entity.Order) *OrdersResponse {
+func EditOrderResponse(entityOrder *entity.OrderEntity) *OrdersResponse {
 	response := NewOrdersResponse()
 	response.Id = entityOrder.Id
 	response.Status = entityOrder.Status

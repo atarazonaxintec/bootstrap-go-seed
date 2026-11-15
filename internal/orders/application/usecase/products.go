@@ -1,0 +1,39 @@
+package usecase
+
+import (
+	"context"
+
+	"microservice/internal/orders/application/dto"
+	domain "microservice/internal/orders/domain/repository"
+)
+
+type ProductsUseCase struct {
+	productsRepo domain.ProductsRepository
+}
+
+func NewProductsUseCase(productsRepo domain.ProductsRepository) *ProductsUseCase {
+	return &ProductsUseCase{productsRepo: productsRepo}
+}
+
+func (uc *ProductsUseCase) FindAll(ctx context.Context) ([]*dto.ProductsResponse, error) {
+	products, err := uc.productsRepo.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]*dto.ProductsResponse, 0, len(products))
+	for i := range products {
+		product := products[i]
+		responses = append(responses, dto.ProductsResponseFromEntity(&product))
+	}
+	return responses, nil
+}
+
+func (uc *ProductsUseCase) FindBySku(ctx context.Context, sku string) (*dto.ProductsResponse, error) {
+	product, err := uc.productsRepo.FindBySku(ctx, sku)
+	if err != nil {
+		return nil, err
+	}
+
+	return dto.ProductsResponseFromEntity(product), nil
+}

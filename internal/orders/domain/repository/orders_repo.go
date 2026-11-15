@@ -7,8 +7,8 @@ import (
 
 type OrdersRepository interface {
 	Ping(ctx context.Context) error
-	CreateOrder(ctx context.Context, rut string) (*entity.Order, error)
-	UpdateOrder(ctx context.Context, order *entity.Order) (*entity.Order, error)
-	GetOrderById(ctx context.Context, id string) (*entity.Order, error)
-	GetOrdersByRut(ctx context.Context, rut string) ([]*entity.Order, error)
+	CreateOrder(ctx context.Context, rut string) (*entity.OrderEntity, error)
+	UpdateOrder(ctx context.Context, order *entity.OrderEntity) (*entity.OrderEntity, error)
+	GetOrderById(ctx context.Context, id string) (*entity.OrderEntity, error)
+	GetOrdersByRut(ctx context.Context, rut string) ([]*entity.OrderEntity, error)
 }

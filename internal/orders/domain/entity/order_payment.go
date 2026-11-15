@@ -1,6 +1,6 @@
 package entity
 
-type OrderPayment struct {
+type OrderPaymentEntity struct {
 	Id            string             `json:"id" database:"id"`
 	OrderId       string             `json:"order_id" database:"order_id"`
 	PaymentMethod string             `json:"payment_method" database:"payment_method"`

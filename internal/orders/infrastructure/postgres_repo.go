@@ -29,7 +29,7 @@ func (r *PostgresOrdersRepository) Ping(ctx context.Context) error {
 	return pool.Ping(ctx)
 }
 
-func (r *PostgresOrdersRepository) CreateOrder(ctx context.Context, rut string) (*entity.Order, error) {
+func (r *PostgresOrdersRepository) CreateOrder(ctx context.Context, rut string) (*entity.OrderEntity, error) {
 	pool := r.db.Native().(*pgxpool.Pool)
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *PostgresOrdersRepository) CreateOrder(ctx context.Context, rut string) 
 	return order, nil
 }
 
-func (r *PostgresOrdersRepository) UpdateOrder(ctx context.Context, order *entity.Order) (*entity.Order, error) {
+func (r *PostgresOrdersRepository) UpdateOrder(ctx context.Context, order *entity.OrderEntity) (*entity.OrderEntity, error) {
 	if order == nil {
 		return nil, errors.New("update order: order cannot be nil")
 	}
@@ -125,7 +125,7 @@ func (r *PostgresOrdersRepository) UpdateOrder(ctx context.Context, order *entit
 	return r.GetOrderById(ctx, order.Id)
 }
 
-func (r *PostgresOrdersRepository) GetOrderById(ctx context.Context, id string) (*entity.Order, error) {
+func (r *PostgresOrdersRepository) GetOrderById(ctx context.Context, id string) (*entity.OrderEntity, error) {
 	pool := r.db.Native().(*pgxpool.Pool)
 	order, err := scanOrder(pool.QueryRow(ctx, `
 		SELECT id::text, rut, sub_total, status, created_at::text, updated_at::text
@@ -145,7 +145,7 @@ func (r *PostgresOrdersRepository) GetOrderById(ctx context.Context, id string) 
 	return order, nil
 }
 
-func (r *PostgresOrdersRepository) GetOrdersByRut(ctx context.Context, rut string) ([]*entity.Order, error) {
+func (r *PostgresOrdersRepository) GetOrdersByRut(ctx context.Context, rut string) ([]*entity.OrderEntity, error) {
 	pool := r.db.Native().(*pgxpool.Pool)
 	rows, err := pool.Query(ctx, `
 		SELECT id::text, rut, sub_total, status, created_at::text, updated_at::text
@@ -158,7 +158,7 @@ func (r *PostgresOrdersRepository) GetOrdersByRut(ctx context.Context, rut strin
 	}
 	defer rows.Close()
 
-	orders := make([]*entity.Order, 0)
+	orders := make([]*entity.OrderEntity, 0)
 	for rows.Next() {
 		order, err := scanOrder(rows)
 		if err != nil {
@@ -186,8 +186,8 @@ type orderDetailQuerier interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
 
-func scanOrder(row orderScanner) (*entity.Order, error) {
-	order := &entity.Order{}
+func scanOrder(row orderScanner) (*entity.OrderEntity, error) {
+	order := &entity.OrderEntity{}
 	var status string
 	if err := row.Scan(
 		&order.Id,
@@ -200,12 +200,12 @@ func scanOrder(row orderScanner) (*entity.Order, error) {
 		return nil, err
 	}
 	order.Status = entity.OrderStatus(status)
-	order.OrderItems = make([]entity.OrderItem, 0)
-	order.Payments = make([]entity.OrderPayment, 0)
+	order.OrderItems = make([]entity.OrderItemEntity, 0)
+	order.Payments = make([]entity.OrderPaymentEntity, 0)
 	return order, nil
 }
 
-func loadOrderDetails(ctx context.Context, querier orderDetailQuerier, order *entity.Order) error {
+func loadOrderDetails(ctx context.Context, querier orderDetailQuerier, order *entity.OrderEntity) error {
 	itemRows, err := querier.Query(ctx, `
 		SELECT order_id::text, sku, quantity, created_at::text, updated_at::text
 		FROM order_items
@@ -216,7 +216,7 @@ func loadOrderDetails(ctx context.Context, querier orderDetailQuerier, order *en
 		return fmt.Errorf("get items for order %q: %w", order.Id, err)
 	}
 	for itemRows.Next() {
-		var item entity.OrderItem
+		var item entity.OrderItemEntity
 		if err := itemRows.Scan(&item.OrderId, &item.Sku, &item.Quantity, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			itemRows.Close()
 			return fmt.Errorf("scan item for order %q: %w", order.Id, err)
@@ -241,7 +241,7 @@ func loadOrderDetails(ctx context.Context, querier orderDetailQuerier, order *en
 	defer paymentRows.Close()
 
 	for paymentRows.Next() {
-		var payment entity.OrderPayment
+		var payment entity.OrderPaymentEntity
 		var status string
 		if err := paymentRows.Scan(
 			&payment.Id,
