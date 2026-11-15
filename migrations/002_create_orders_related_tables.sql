@@ -1,4 +1,6 @@
-CREATE TABLE IF NOT EXISTS products (
+CREATE SCHEMA IF NOT EXISTS go_seed;
+
+CREATE TABLE IF NOT EXISTS go_seed.products (
     sku VARCHAR(100) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -8,7 +10,7 @@ CREATE TABLE IF NOT EXISTS products (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS orders (
+CREATE TABLE IF NOT EXISTS go_seed.orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     rut VARCHAR(10) NOT NULL,
     sub_total DECIMAL(10, 2) NOT NULL,
@@ -17,24 +19,24 @@ CREATE TABLE IF NOT EXISTS orders (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS order_items (
-    order_id UUID NOT NULL REFERENCES orders(id),
-    sku VARCHAR(100) NOT NULL REFERENCES products(sku),
+CREATE TABLE IF NOT EXISTS go_seed.order_items (
+    order_id UUID NOT NULL REFERENCES go_seed.orders(id),
+    sku VARCHAR(100) NOT NULL REFERENCES go_seed.products(sku),
     quantity INT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS order_statuses (
+CREATE TABLE IF NOT EXISTS go_seed.order_statuses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id UUID NOT NULL REFERENCES orders(id),
+    order_id UUID NOT NULL REFERENCES go_seed.orders(id),
     status VARCHAR(50) NOT NULL,
     changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS order_payments (
+CREATE TABLE IF NOT EXISTS go_seed.order_payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id UUID NOT NULL REFERENCES orders(id),
+    order_id UUID NOT NULL REFERENCES go_seed.orders(id),
     payment_method VARCHAR(50) NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
     paid_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -38,7 +38,7 @@ func (r *PostgresOrdersRepository) CreateOrder(ctx context.Context, rut string) 
 	defer tx.Rollback(ctx)
 
 	order, err := scanOrder(tx.QueryRow(ctx, `
-		INSERT INTO orders (rut, sub_total, status)
+		INSERT INTO go_seed.orders (rut, sub_total, status)
 		VALUES ($1, 0, 'en_preparacion')
 		RETURNING id::text, rut, sub_total, status, created_at::text, updated_at::text
 	`, rut))
@@ -47,7 +47,7 @@ func (r *PostgresOrdersRepository) CreateOrder(ctx context.Context, rut string) 
 	}
 
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO order_statuses (order_id, status)
+		INSERT INTO go_seed.order_statuses (order_id, status)
 		VALUES ($1, $2)
 	`, order.Id, order.Status); err != nil {
 		return nil, fmt.Errorf("record initial order status: %w", err)
@@ -74,20 +74,20 @@ func (r *PostgresOrdersRepository) UpdateOrder(ctx context.Context, order *entit
 	var previousStatus string
 	if err := tx.QueryRow(ctx, `
 		SELECT status
-		FROM orders
+		FROM go_seed.orders
 		WHERE id = $1
 		FOR UPDATE
 	`, order.Id).Scan(&previousStatus); err != nil {
 		return nil, fmt.Errorf("find order to update: %w", err)
 	}
 
-	if _, err := tx.Exec(ctx, `DELETE FROM order_items WHERE order_id = $1`, order.Id); err != nil {
+	if _, err := tx.Exec(ctx, `DELETE FROM go_seed.order_items WHERE order_id = $1`, order.Id); err != nil {
 		return nil, fmt.Errorf("replace order items: %w", err)
 	}
 
 	for _, item := range order.OrderItems {
 		if _, err := tx.Exec(ctx, `
-			INSERT INTO order_items (order_id, sku, quantity)
+			INSERT INTO go_seed.order_items (order_id, sku, quantity)
 			VALUES ($1, $2, $3)
 		`, order.Id, item.Sku, item.Quantity); err != nil {
 			return nil, fmt.Errorf("insert order item %q: %w", item.Sku, err)
@@ -95,14 +95,14 @@ func (r *PostgresOrdersRepository) UpdateOrder(ctx context.Context, order *entit
 	}
 
 	if _, err := tx.Exec(ctx, `
-		UPDATE orders
+		UPDATE go_seed.orders
 		SET rut = $2,
 		status = $3,
 		sub_total = COALESCE((
-			SELECT SUM(products.price * order_items.quantity)
-			FROM order_items
-			JOIN products ON products.sku = order_items.sku
-			WHERE order_items.order_id = $1
+			SELECT SUM(product.price * item.quantity)
+			FROM go_seed.order_items AS item
+			JOIN go_seed.products AS product ON product.sku = item.sku
+			WHERE item.order_id = $1
 		), 0),
 		updated_at = CURRENT_TIMESTAMP
 		WHERE id = $1
@@ -112,7 +112,7 @@ func (r *PostgresOrdersRepository) UpdateOrder(ctx context.Context, order *entit
 
 	if previousStatus != string(order.Status) {
 		if _, err := tx.Exec(ctx, `
-			INSERT INTO order_statuses (order_id, status)
+			INSERT INTO go_seed.order_statuses (order_id, status)
 			VALUES ($1, $2)
 		`, order.Id, order.Status); err != nil {
 			return nil, fmt.Errorf("record order status change: %w", err)
@@ -129,7 +129,7 @@ func (r *PostgresOrdersRepository) GetOrderById(ctx context.Context, id string) 
 	pool := r.db.Native().(*pgxpool.Pool)
 	order, err := scanOrder(pool.QueryRow(ctx, `
 		SELECT id::text, rut, sub_total, status, created_at::text, updated_at::text
-		FROM orders
+		FROM go_seed.orders
 		WHERE id = $1
 	`, id))
 	if err != nil {
@@ -149,7 +149,7 @@ func (r *PostgresOrdersRepository) GetOrdersByRut(ctx context.Context, rut strin
 	pool := r.db.Native().(*pgxpool.Pool)
 	rows, err := pool.Query(ctx, `
 		SELECT id::text, rut, sub_total, status, created_at::text, updated_at::text
-		FROM orders
+		FROM go_seed.orders
 		WHERE rut = $1
 		ORDER BY created_at DESC
 	`, rut)
@@ -208,7 +208,7 @@ func scanOrder(row orderScanner) (*entity.OrderEntity, error) {
 func loadOrderDetails(ctx context.Context, querier orderDetailQuerier, order *entity.OrderEntity) error {
 	itemRows, err := querier.Query(ctx, `
 		SELECT order_id::text, sku, quantity, created_at::text, updated_at::text
-		FROM order_items
+		FROM go_seed.order_items
 		WHERE order_id = $1
 		ORDER BY created_at
 	`, order.Id)
@@ -231,7 +231,7 @@ func loadOrderDetails(ctx context.Context, querier orderDetailQuerier, order *en
 
 	paymentRows, err := querier.Query(ctx, `
 		SELECT id::text, order_id::text, payment_method, amount, paid_at::text, status
-		FROM order_payments
+		FROM go_seed.order_payments
 		WHERE order_id = $1
 		ORDER BY paid_at
 	`, order.Id)
